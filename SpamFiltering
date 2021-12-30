@@ -1,0 +1,220 @@
+from __future__ import print_function, division
+import nltk
+import os
+import random
+from collections import Counter
+from nltk import word_tokenize, WordNetLemmatizer
+from nltk.corpus import stopwords
+from scipy import linalg
+
+import numpy as np
+from nltk.classify.scikitlearn import SklearnClassifier
+
+from nltk import NaiveBayesClassifier, classify
+from nltk import DecisionTreeClassifier
+
+from sklearn.linear_model import LogisticRegression,SGDClassifier
+from sklearn.svm import SVC, LinearSVC, NuSVC
+
+from nltk.classify import maxent
+
+
+stoplist = stopwords.words('english')
+
+def init_lists(folder):
+    f = open(folder, "r")
+    hlist = []
+    slist = []
+    for line in f:
+        # a = line.strip().split("\n")
+        msg = line.strip().split("\t")
+        if(msg[0]=="ham"):
+            hlist.append(msg[1])
+        else:
+            slist.append(msg[1])
+    return hlist, slist
+
+def load(folder):
+    f = open(folder, "r")
+    mlist = []
+    for line in f:
+        msg = line.strip().split("\t")
+        mlist.append(msg)
+    return mlist
+
+def preprocess(sentence):
+    pstemmer = nltk.PorterStemmer()
+    lstemmer = nltk.LancasterStemmer()
+    lemmatizer = WordNetLemmatizer()
+    #return [lemmatizer.lemmatize(word.lower()) for word in word_tokenize(unicode(sentence, errors='ignore'))]
+    # return [lemmatizer.lemmatize(word.lower()) for word in word_tokenize(" ")]
+    return [word.lower() for word in word_tokenize(unicode(sentence, errors='ignore'))]
+
+def get_features(text, setting):
+    if setting=='bow':
+        return {word: count for word, count in Counter(preprocess(text)).items() if not word in stoplist}
+    else:
+        return {word: True for word in preprocess(text) if not word in stoplist}
+
+def featuresSVD(text, setting):
+    b=[]
+    c=[]
+    if setting == 'bow':
+       for word, count in Counter(preprocess(text)).items():
+           if(word != stoplist):
+               b.append(count)
+              # c.append(word)
+    return  b,c
+
+
+                # if setting=='a':
+    #     return {word: count for word, count in Counter(preprocess(text)).items() if not word in stoplist}
+    # else:
+    #     return {word: True for word in preprocess(text) if not word in stoplist}
+
+    # if setting=='bow':
+    #     return {word: count for word, count in Counter(preprocess(text)).items()}
+    # else:
+    #     return {word: True for word in preprocess(text) }
+
+    # if setting=='a':
+    #     return {word: count for word, count in Counter(preprocess(text)).items()}
+    # else:
+    #     return {word: True for word in preprocess(text) }
+
+
+def evaluate(train_set, test_set, classifier):
+    # check how the classifier performs on the training and test sets
+    print ('Accuracy training set = ' + str(classify.accuracy(classifier, train_set)))
+    print ('Accuracy test set = ' + str(classify.accuracy(classifier, test_set)))
+    # check which words are most informative for the classifier
+    classifier.show_most_informative_features(20)
+
+if __name__ == "__main__":
+    # initialise the data
+
+    ham,spam = init_lists("C:\Users\User\PycharmProjects\spamfiltering\spam_train.txt")
+    hamtest, spamtest = init_lists("C:\Users\User\PycharmProjects\spamfiltering\spam_test.txt")
+    # print(spam)
+    # print("------------------------------------------------------------")
+    # print(ham)
+
+
+    all_emails = [(email, 'spam') for email in spam]
+    all_emails += [(email, 'ham') for email in ham]
+
+    all_emailstest = [(email, 'spam') for email in spamtest]
+    all_emailstest += [(email, 'ham') for email in hamtest]
+
+
+
+    # extract the features
+    # all_features = [(get_features(email, 'bow'), label) for (email, label) in all_emails] #training
+    # all_fraturestest = [(get_features(email, 'bow'), label) for (email, label) in all_emailstest] #testing
+
+
+    # print ('Collected ' + str(len(all_features)) + ' feature sets')
+
+    # train the classifier(memang tidak diperlukan)
+
+    # train_set, test_set, classifier = train(all_features, 0.8)
+
+    x ,y = [(featuresSVD(email, 'bow'),label)  for (email, label) in all_emails]
+    xtest, ytest = [(featuresSVD(email, 'bow'),label) for (email, label) in all_emailstest1]
+
+
+    # testW,testC = [featuresSVD(email, 'bow') for (email, label) in all_emailstest]
+    # print(trainW)
+    # print(str(len(trainW))+','+str(len(trainW[0])))
+    # print(str(len(trainW)) + ',' + str(trainW[0][1]))
+    a = np.array ([[4,0],[3,-5,0]])
+    length=0
+    # for xi in x:
+    #     for count in x[0]:
+    #         count+=1
+    #     if(count>length):
+    #         length =count
+    # print (str(length))
+    length = len (sorted(x,key=len,reverse=True)[0])
+    training = np.array([xi+[0]*(length-len(xi))for xi in x])
+    length = len(sorted(xtest, key=len, reverse=True)[0])
+    testing = np.array([xitest + [0] * (length - len(xitest)) for xitest in xtest])
+    # a=y.todense()
+    # print(y)
+    U, s, Vh = linalg.svd(training)
+    Ut, st, Vht = linalg.svd(testing)
+    # print("---------------------------------")
+    print(U)
+    a = dot(U,Vh)
+    b = dot(Ut,Vht)
+
+
+
+    # for i in trainW:
+    #     for j in trainW[0]:
+    #         a=trainW[i][j]
+    #         b =
+    # print (b)
+
+    #
+    # U, s, Vh = linalg.svd(j)
+
+    # print(U.shape)
+    # print(s.shape)
+    # print(Vh.shape)
+
+    # print(train_set)
+    # print(trainW)
+    # classifier = NaiveBayesClassifier.train(train_set)
+    #
+    # # evaluate its performance
+    # evaluate(train_set, test_set, classifier)
+    #
+    # LogisticRegression_classifier = SklearnClassifier(LogisticRegression())
+    # LogisticRegression_classifier.train(train_set)
+    # print("LogisticRegression_classifier")
+    # # print("LogisticRegression_classifier accuracy percent:",
+    # #       (nltk.classify.accuracy(LogisticRegression_classifier, test_set)) * 100)
+    # print('Accuracy training set = ' + str(nltk.classify.accuracy(LogisticRegression_classifier, train_set)))
+    # print('Accuracy test set = ' + str(nltk.classify.accuracy(LogisticRegression_classifier, test_set)))
+    # #
+    # SGDClassifier_classifier = SklearnClassifier(SGDClassifier())
+    # SGDClassifier_classifier.train(train_set)
+    # print("SGDClassifier_classifier accuracy percent:")
+    #       # (nltk.classify.accuracy(SGDClassifier_classifier, testing_set)) * 100)
+    #
+    # print('Accuracy training set = ' + str(nltk.classify.accuracy(SGDClassifier_classifier, train_set)))
+    # print('Accuracy test set = ' + str(nltk.classify.accuracy(SGDClassifier_classifier, test_set)))
+    #
+    # SVC_classifier = SklearnClassifier(SVC())
+    # SVC_classifier.train(train_set)
+    # print("SVC_classifier accuracy percent:")
+    # # , (nltk.classify.accuracy(SVC_classifier, testing_set)) * 100)
+    # print('Accuracy training set = ' + str(nltk.classify.accuracy(SVC_classifier, train_set)))
+    # print('Accuracy test set = ' + str(nltk.classify.accuracy(SVC_classifier, test_set)))
+    #
+    # LinearSVC_classifier = SklearnClassifier(LinearSVC())
+    # LinearSVC_classifier.train(train_set)
+    # print("LinearSVC_classifier accuracy percent:")
+    # # , (nltk.classify.accuracy(LinearSVC_classifier, testing_set)) * 100)
+    # print('Accuracy training set = ' + str(nltk.classify.accuracy(LinearSVC_classifier, train_set)))
+    # print('Accuracy test set = ' + str(nltk.classify.accuracy(LinearSVC_classifier, test_set)))
+    #
+
+    # NuSVC_classifier = SklearnClassifier(NuSVC())
+    # NuSVC_classifier.train(train_set)
+    # print("NuSVC_classifier accuracy percent:")
+    # # , (nltk.classify.accuracy(NuSVC_classifier, testing_set)) * 100)
+    # print('Accuracy on the training set = ' + str(nltk.classify.accuracy(NuSVC_classifier, train_set)))
+    # print('Accuracy of the test set = ' + strnltk.classify.accuracy(NuSVC_classifier, test_set))
+    # classifier = DecisionTreeClassifier.train(train_set,0, 0)
+    # print ("Decision Tree")
+    # # classifier = nltk.classify.DecisionTreeClassifier.train(train_set, entropy_cutoff = 0,support_cutoff = 0)
+    # print('Accuracy on the training set = ' + str(nltk.classify.accuracy(classifier, train_set)))
+    # print('Accuracy of the test set = ' + str(nltk.classify.accuracy(classifier, test_set)))
+    # print("maxent")
+    # algorithm = nltk.classify.MaxentClassifier.ALGORITHMS[0]
+    # classifier = nltk.MaxentClassifier.train(train_set, algorithm, max_iter=3)
+    # # mec = nltk.classify.MaxentClassifier.train(train_set, 'GIS', trace=0, max_iter=1000)
+    # print('Accuracy on the training set = ' + str(nltk.classify.accuracy(mec, train_set)))
+    # print('Accuracy of the test set = ' + str(nltk.classify.accuracy(mec, test_set)))
